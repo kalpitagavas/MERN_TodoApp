@@ -8,7 +8,7 @@ const userSchema = mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
-      trim,
+      trim: true,
     },
     password: { type: String, required: true },
     verifyOTP: { type: String, default: "" },
@@ -18,6 +18,8 @@ const userSchema = mongoose.Schema(
     resetOTPExpireAt: { type: Number, default: 0 },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     avatar: { type: String, default: "" },
+    isActive: { type: Boolean, default: true },
+    islastLogin: { type: Date, default: null },
   },
   {
     timestamps: true,
