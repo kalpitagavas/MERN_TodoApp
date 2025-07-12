@@ -18,7 +18,7 @@ const signup = async (req, res) => {
 
     const hashPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
-    const expireotp = Date.now() * 5 * 60 * 1000;
+     const expireotp = Date.now() * 5 * 60 * 1000;
     const newUser = await new UserModel({
       name,
       email,
@@ -27,7 +27,7 @@ const signup = async (req, res) => {
       role: role || "user",
       isActive: isActive !== undefined ? isActive : true,
       verifyOTP: otp,
-      verifyOTPExpireAt: otpExpire,
+      verifyOTPExpireAt: expireotp,
     }).save();
     await sendOTP(email, otp);
     const token = jwt.sign({ user: newUser._id }, process.env.JWT_TOKEN, {
@@ -50,9 +50,85 @@ const signup = async (req, res) => {
   }
 };
 
+const verifyOTP=async(req,res)=>{
+  try{
+    const {email,otp}=req.body;
+    const user=await UserModel.findOne({email});
+    if(!user)return res.status(400).json({msg:"user not Found"});
+    if (user.verifyOTP !== otp || user.verifyOTPExpireAt < Date.now()) {
+  return res.status(400).json({ msg: "Invalid or expired OTP" });
+}
+ user.isAccountVerified=true,
+ user.verifyOTP="",
+ user.verifyOTPExpireAt=0
+ await user.save()
+  res.status(200).json({ msg: "Account verified successfully",user:{
+    id:user._id,name:user.name,email:user.email,isAccountVerified:user.isAccountVerified
+  } });
+   
+  }
+  catch(err){
+  res.status(400).json({  msg: "OTP verification error", error: err.message });
+  }
+}
+
+const resendOTP=async(req,res)=>{
+  try{
+  const {email}=req.body;
+  const user=await UserModel.findOne({email})
+  if(!user)return res.status(400).json({msg:"User not Found",err:err.message})
+  
+    const otp=generateOTP();
+    user.verifyOTP=otp;
+    user.verifyOTPExpireAt=Date.now()+10*6*1000;
+    await user.save()
+ await sendOTP(email, otp);
+ res.status(200).json({ msg: "OTP resent to email" });
+  }
+  catch(err){
+res.status(400).json({msg:"Failed to resend OTP", error: err.message })
+  }
+}
+
+const sendResetOTP=async(req,res)=>{
+  try{
+    const {email}=req.body
+  const user=await UserModel.findOne({email});
+  if(!user) return res.status(400).json({msg:"user not found"})
+    const otp=generateOTP();
+  user,resendOTP=otp;
+  user.resetOTPExpireAt=Date.now()+10*60*10000;
+  await user.save();
+  await sendOTP(email,otp);
+   res.status(200).json({ msg: "Reset OTP sent to email" });
+  }
+  catch(err){
+res.status(400).json({msg:"Error while Resenting OTP"})
+  }
+}
 
 
+const resetPassword =async(req,res)=>{
+  try{
+  const {email,otp,newpassword}=req.body
+  const user=await UserModel.findOne({email});
+if(!user) return res.status(400).json({msg:"User Not Found"});
 
+if(user.resendOTP!==otp||user.resetOTPExpireAt<Date.now()){
+ return res.status(400).json({ msg: "Invalid or expired OTP" });
+    }
+
+    user.password=await bcrypt.hash(newpassword,10);
+    user.resendOTP="",
+    user.resetOTPExpireAt=0;
+    await user.save();
+    res.status(200).json({msg:"Password has been reset successfully"})
+
+  }catch(err){
+res.status(400).json({msg:"Reset failed", error: err.message })
+
+  }
+}
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -75,7 +151,8 @@ const login = async (req, res) => {
       expiresIn: "7d",
     });
 
-    user.lastLogin = new Date();
+  
+    user.islastLogin = new Date();
     await user.save();
 
     res.cookie("token", token, {
@@ -118,4 +195,10 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, logout };
+module.exports = {signup,
+  login,
+  logout,
+  resendOTP,
+  verifyOTP,
+  sendResetOTP,
+  resetPassword, };

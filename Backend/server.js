@@ -9,8 +9,12 @@ app.use(express.json());
 app.use(cookieparser());
 
 const authRouter = require("./router/auth.route");
+const { todorouter } = require("./router/todo.route");
 
+// Base routes
 app.use("/auth", authRouter);
+app.use("/todo", todorouter);
+
 app.get("/", (req, res) => {
   res.send("Dashboard");
 });
@@ -24,8 +28,9 @@ const serverDB = async () => {
       );
     });
   } catch (err) {
-    console.error("DB connection failed:", error.message);
+    console.error("DB connection failed:", err.message);
     process.exit(1);
   }
 };
+
 serverDB();
