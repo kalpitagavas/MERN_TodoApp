@@ -1,0 +1,108 @@
+🔥🔥 AUTH FLOW - FULL REFERENCE (FOR NOTEPAD) 🔥🔥
+📦 PROJECT: TODOAPP - BACKEND AUTH
+
+===========================================
+📁 ROUTES - auth.route.js
+===========================================
+🔸 POST   /signup            → signupController
+🔸 POST   /verify-otp        → verifyOTP
+🔸 POST   /resend-otp        → resendOTP
+🔸 POST   /login             → login
+🔸 GET    /logout            → logout
+🔸 POST   /send-reset-otp    → sendResetOTP
+🔸 POST   /reset-password    → resetPassword
+
+===========================================
+📁 CONTROLLERS - auth.controller.js
+===========================================
+
+🟢 signup()
+- ✅ Validate input
+- 🔐 Hash password
+- 🔢 Generate 4-digit verifyOTP
+- ⏰ Set verifyOTPExpireAt
+- ✉️  Call sendOTP(email, verifyOTP, "verify")
+- 💾 Save user to DB
+- 🍪 Return JWT in cookie
+
+🟢 verifyOTP()
+- 🔍 Check if user exists
+- ✅ Match OTP & check expiry
+- ☑️ Set user.verified = true
+- 🧹 Clear OTP fields
+- 💾 Save user
+
+🟢 resendOTP()
+- 🔍 Find user by email
+- 🔢 Generate new OTP
+- ⏰ Set new verifyOTP & expiry
+- ✉️  Call sendOTP(email, OTP, "verify")
+
+🟢 sendResetOTP()
+- 🔍 Check user exists
+- 🔢 Generate 4-digit resetOTP
+- ⏰ Set resetOTPExpireAt
+- ✉️  Call sendOTP(email, OTP, "reset")
+
+🟢 resetPassword()
+- ✅ Validate OTP & expiry
+- 🔐 Hash new password
+- 🧹 Clear resetOTP fields
+- 💾 Save user
+
+🟢 login()
+- 🔍 Validate email + password
+- ✅ Check user.verified = true
+- 🍪 Return JWT token in cookie
+
+🟢 logout()
+- 🚪 Clear JWT cookie
+
+===========================================
+📁 MIDDLEWARE - authMiddleware.js
+===========================================
+🛡️ protect()
+- 🧪 Get JWT from cookie
+- 🔐 Verify and decode token
+- 👤 Attach user to req.user
+- ❌ Error if token invalid/missing
+
+===========================================
+📁 UTILS - sendOTP.js
+===========================================
+✉️ sendOTP(email, otp, type)
+- 📬 Send OTP via email
+- 🔧 Uses nodemailer or similar
+- 🧾 type = "verify" | "reset"
+
+===========================================
+📁 UTILS - tokenHandler.js (assumed)
+===========================================
+🔐 generateToken(userId)
+🍪 sendToken(user, res)
+- 🥠 Set JWT in cookie
+
+===========================================
+📁 MODELS - userModel.js
+===========================================
+🧍 Fields:
+- name, email, password
+- verified (Boolean)
+- verifyOTP, verifyOTPExpireAt
+- resetOTP, resetOTPExpireAt
+
+===========================================
+📁 CONFIG - db.js
+===========================================
+🌐 connectDB()
+- ⚙️ Connects to MongoDB
+- 📄 Uses .env DB_URI
+
+===========================================
+📁 MAIN - server.js
+===========================================
+🚀 Express App
+- 🔌 Connect DB
+- ⚙️ Use middlewares
+- 📌 Mount routers
+- 🎯 Start server
